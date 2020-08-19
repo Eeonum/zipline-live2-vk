@@ -183,7 +183,8 @@ def load_data_table(file,
     initial_size = data_table.size
     data_table = data_table[~data_table.symbol.isin(load_exclusions())]
     if show_progress:
-        log.info(f"Excluding {initial_size - data_table.size} lines based on exclusions.pkl")
+        log.info(f"Excluding {initial_size - data_table.size} \
+            ({(initial_size - data_table.size)/initial_size*100:.0f}) lines based on exclusions.pkl")
     return data_table
 
 def fetch_data_table(api_key,

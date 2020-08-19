@@ -36,9 +36,11 @@ def exclude(bundle='sharadar-ext'):
     for i, asset in enumerate(all_assets):
         live_today = pd.Timestamp(datetime.utcnow().date()).replace(tzinfo=pytz.UTC)
         if asset.to_dict()['end_date'] + pd.offsets.BDay(1) >= live_today:
-            print(f'Checking {asset.symbol} symbol')
-            contracts = broker.reqMatchingSymbols(asset.symbol)
-            if asset.symbol not in [c.contract.symbol for c in contracts]:
+            print(f'Checking {asset.symbol} symbol ({i+1}/{len(all_assets)})')
+            contracts = None
+            while contracts is None:
+                contracts = broker.reqMatchingSymbols(asset.symbol)
+            if asset.symbol not in [c.contract.symbol for c in contracts] and '^' not in asset.symbol:
                 print(f'!!!No IB data for {asset.symbol}!!!')
                 exclusions.append(asset.symbol)
         else:
