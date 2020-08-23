@@ -420,9 +420,20 @@ def zipline_magic(line, cell=None):
     default=True,
     help='Print progress information to the terminal.'
 )
-def ingest(bundle, assets_version, show_progress):
+@click.option(
+    '--file-logging/--no-file-logging',
+    default=False,
+    help='Duplicate log to file.'
+)
+def ingest(bundle, assets_version, show_progress, file_logging):
     """Ingest the data for the given bundle.
     """
+    from logbook import FileHandler
+    import datetime
+    from zipline.utils.paths import zipline_root
+    if file_logging:
+        log_file = zipline_root() + f'/ingest {datetime.datetime.now().strftime("%d-%m-%Y %H:%M")}.log'
+        FileHandler(log_file, bubble=True).push_application()
     bundles_module.ingest(
         bundle,
         os.environ,
@@ -431,6 +442,53 @@ def ingest(bundle, assets_version, show_progress):
         show_progress,
     )
 
+@main.command()
+@click.option(
+    '-b',
+    '--bundle',
+    default='quandl',
+    metavar='BUNDLE-NAME',
+    show_default=True,
+    help='The data bundle to ingest.',
+)
+@click.option(
+    '--assets-version',
+    type=int,
+    multiple=True,
+    help='Version of the assets db to which to downgrade.',
+)
+@click.option(
+    '--show-progress/--no-show-progress',
+    default=True,
+    help='Print progress information to the terminal.'
+)
+@click.option(
+    '--file-logging/--no-file-logging',
+    default=False,
+    help='Duplicate log to file.'
+)
+def exclude_and_ingest(bundle, assets_version, show_progress, file_logging):
+    """Ingest the data for the given bundle.
+    """
+    from logbook import FileHandler
+    import datetime
+    from zipline.data.bundles.excluder import exclude_from_web
+
+    exclude_from_web(bundle_module=bundle,
+                     look_for_file=True)
+
+    from zipline.utils.paths import zipline_root
+    if file_logging:
+        log_file = zipline_root() + f'/ingest {datetime.datetime.now().strftime("%d-%m-%Y %H:%M")}.log'
+        FileHandler(log_file, bubble=True).push_application()
+
+    bundles_module.ingest(
+        bundle,
+        os.environ,
+        pd.Timestamp.utcnow(),
+        assets_version,
+        show_progress,
+    )
 
 @main.command()
 @click.option(

@@ -1,5 +1,5 @@
 """
-IB TWS sometimes does not recognize sumbols provided by quandl/sharadar. It is painful experience
+IB TWS sometimes does not recognize symbols provided by quandl/sharadar. It is painful experience
 when your pipeline crashes due to this reason. In order to overcome this we run exclude routine from
 this file which creates local copy (pickle file) of the list containing the exclusions. These exclusions
 file is then treated in a due way by sharadar-ext insgest module (see sharadar_ext.py).
@@ -18,9 +18,10 @@ from datetime import datetime
 import pytz
 import pickle
 from zipline.data.bundles.sharadar_ext import EXCLUSIONS_FILE
+import os
 
-
-def exclude(bundle='sharadar-ext'):
+def exclude_from_local(bundle='sharadar-ext',
+                       ):
     tws_uri = 'localhost:7496:1'
     broker = IBBroker(tws_uri)
 
@@ -50,3 +51,52 @@ def exclude(bundle='sharadar-ext'):
         pickle.dump(exclusions, f)
 
     print(f'{len(exclusions)} exclusions found!')
+
+def exclude_from_web(bundle_module='sharadar_ext',
+                     look_for_file=False,
+                     ):
+    import importlib
+    from logbook import Logger
+    log = Logger(__name__)
+
+    if look_for_file and os.path.exists(EXCLUSIONS_FILE):
+        log.info('No need to run excluder, exclusions file has been found!')
+        return
+
+    full_bundle_module_name = 'zipline.data.bundles.' + bundle_module
+
+    bundle_module_ref = importlib.import_module(full_bundle_module_name)
+    tws_uri = 'localhost:7496:1'
+    broker = IBBroker(tws_uri)
+
+    exclusions = []
+
+    api_key = os.environ.get('QUANDL_API_KEY')
+    raw_data = bundle_module_ref.fetch_data_table(api_key=api_key,
+                                                  show_progress=True,
+                                                  retries=1,
+                                                  check_exclusions=False,
+                                )
+    asset_metadata = bundle_module_ref.gen_asset_metadata(raw_data[['symbol', 'date']],
+                                                          True
+                                                          )
+
+    for i, asset in asset_metadata.iterrows():
+        live_today = pd.Timestamp(datetime.utcnow().date()).replace(tzinfo=pytz.UTC)
+        asset_end_date = pd.Timestamp(asset['end_date']).replace(tzinfo=pytz.UTC)
+        symbol = asset['symbol']
+        if asset_end_date + pd.offsets.BDay(1) >= live_today:
+            log.info(f'Checking {symbol} symbol ({i+1}/{len(asset_metadata)})')
+            contracts = None
+            while contracts is None:
+                contracts = broker.reqMatchingSymbols(symbol)
+            if symbol not in [c.contract.symbol for c in contracts] and '^' not in symbol:
+                log.warning(f'!!!No IB data for {symbol}!!!')
+                exclusions.append(symbol)
+        else:
+            log.info(f'Skipping check for {symbol} as it is not traded any more')
+
+    with open(EXCLUSIONS_FILE, 'wb') as f:
+        pickle.dump(exclusions, f)
+
+    log.info(f'{len(exclusions)} exclusions found!')

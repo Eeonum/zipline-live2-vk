@@ -145,7 +145,8 @@ def format_metadata_url(api_key, url = QUANDL_DATA_URL):
 
 def load_data_table(file,
                     index_col,
-                    show_progress=False):
+                    show_progress=False,
+                    check_exclusions=True):
     """ Load data table from zip file provided by Quandl.
     """
     with ZipFile(file) as zip_file:
@@ -181,15 +182,17 @@ def load_data_table(file,
         copy=False,
     )
     initial_size = data_table.size
-    data_table = data_table[~data_table.symbol.isin(load_exclusions())]
+    if check_exclusions:
+        data_table = data_table[~data_table.symbol.isin(load_exclusions())]
     if show_progress:
         log.info(f"Excluding {initial_size - data_table.size} \
-            ({(initial_size - data_table.size)/initial_size*100:.0f}) lines based on exclusions.pkl")
+            ({(initial_size - data_table.size)/initial_size*100:.1f}%) lines based on exclusions.pkl")
     return data_table
 
 def fetch_data_table(api_key,
                      show_progress,
-                     retries):
+                     retries,
+                     check_exclusions=True):
     for _ in range(retries):
         data_tables = []
         try:
@@ -215,6 +218,7 @@ def fetch_data_table(api_key,
                                 file=raw_file,
                                 index_col=None,
                                 show_progress=show_progress,
+                                check_exclusions=check_exclusions,
                             )
                 data_tables.append(data_table)
             return pd.concat(data_tables)
