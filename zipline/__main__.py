@@ -432,7 +432,7 @@ def ingest(bundle, assets_version, show_progress, file_logging):
     import datetime
     from zipline.utils.paths import zipline_root
     if file_logging:
-        log_file = zipline_root() + f'/ingest {datetime.datetime.now().strftime("%d-%m-%Y %H:%M")}.log'
+        log_file = zipline_root() + f'/ingest{datetime.datetime.now().strftime("%d%m%Y%H%M")}.log'
         FileHandler(log_file, bubble=True).push_application()
     bundles_module.ingest(
         bundle,
@@ -474,12 +474,12 @@ def exclude_and_ingest(bundle, assets_version, show_progress, file_logging):
     import datetime
     from zipline.data.bundles.excluder import exclude_from_web
 
-    exclude_from_web(bundle_module=bundle,
+    exclude_from_web(bundle_module=bundle.replace('-', '_'),
                      look_for_file=True)
 
     from zipline.utils.paths import zipline_root
     if file_logging:
-        log_file = zipline_root() + f'/ingest {datetime.datetime.now().strftime("%d-%m-%Y %H:%M")}.log'
+        log_file = zipline_root() + f'/ingest{datetime.datetime.now().strftime("%d%m%Y%H%M")}.log'
         FileHandler(log_file, bubble=True).push_application()
 
     bundles_module.ingest(
