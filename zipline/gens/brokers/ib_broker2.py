@@ -506,7 +506,7 @@ class IBBroker(IB):
                 exec_detail = execution['exec_detail']
                 is_buy = order.amount > 0
                 amount = (exec_detail.shares if is_buy
-                          else -1 * exec_detail.m_shares)
+                          else -1 * exec_detail.shares)
                 tx = Transaction(
                     asset=order.asset,
                     amount=amount,
