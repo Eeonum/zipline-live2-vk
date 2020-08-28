@@ -476,7 +476,7 @@ def exclude_and_ingest(bundle, assets_version, show_progress, file_logging):
 
     from zipline.utils.paths import zipline_root
     if file_logging:
-        log_file = zipline_root() + f'/ingest{datetime.datetime.now().strftime("%d%m%Y%H%M")}.log'
+        log_file = zipline_root() + f'/ingest_{bundle}_{datetime.datetime.now().strftime("%d%m%Y%H%M")}.log'
         FileHandler(log_file, bubble=True).push_application()
 
     exclude_from_web(bundle_module=bundle.replace('-', '_'),
@@ -489,6 +489,24 @@ def exclude_and_ingest(bundle, assets_version, show_progress, file_logging):
         assets_version,
         show_progress,
     )
+
+@main.command()
+@click.option(
+    '--file-logging/--no-file-logging',
+    default=False,
+    help='Duplicate log to file.'
+)
+def ingest_fundamentals(file_logging):
+    """Ingest the data for the given bundle.
+    """
+    from logbook import FileHandler
+    import datetime
+    from zipline.utils.paths import zipline_root
+    if file_logging:
+        log_file = zipline_root() + f'/ingest_fundamentals_{datetime.datetime.now().strftime("%d%m%Y%H%M")}.log'
+        FileHandler(log_file, bubble=True).push_application()
+
+    bundles_module.quandl_fundamentals.download_all()
 
 @main.command()
 @click.option(

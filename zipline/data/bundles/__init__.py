@@ -6,6 +6,8 @@ from . import sharadar  # noqa
 # added by Vyacheslav Klyuchnikov 02-07-2020
 from . import sharadar_ext  # noqa
 from . import sharadar_funds  # noqa
+# added by Vyacheslav Klyuchnikov 28-08-2020
+from . import quandl_fundamentals  # noqa
 
 from .core import (
     UnknownBundle,
