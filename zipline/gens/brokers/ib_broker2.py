@@ -221,7 +221,7 @@ class IBBroker(IB):
         ticker = self.reqMktData(contract, tick_list)
         for i in range(0, max_wait_cycles):
             self.sleep(wait_step)
-            if ticker.time:
+            if not pd.isna(ticker.close) or not pd.isna(ticker.last):
                 break
 
         return ticker
@@ -270,13 +270,13 @@ class IBBroker(IB):
             if ib_order_id in self.open_orders:
                 open_order_state = self.open_orders[ib_order_id]['state']
 
-                zp_status = self._ib_to_zp_status(open_order_state.m_status)
+                zp_status = self._ib_to_zp_status(open_order_state.status)
                 if zp_status is None:
                     log.warning(
                         "Order-{order_id}: "
                         "unknown order status: {order_status}.".format(
                             order_id=ib_order_id,
-                            order_status=open_order_state.m_status))
+                            order_status=open_order_state.status))
                 else:
                     zp_order.status = zp_status
 

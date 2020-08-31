@@ -12,7 +12,7 @@ bundle you use) on your local machine. So the proper sequence of actions should 
 """
 
 from zipline.data import bundles
-from zipline.gens.brokers.ib_broker2 import IBBroker
+from zipline.gens.brokers.ib_broker2 import IBBroker, Contract
 import pandas as pd
 from datetime import datetime
 import pytz
@@ -87,12 +87,25 @@ def exclude_from_web(bundle_module='sharadar_ext',
         symbol = asset['symbol']
         if asset_end_date + pd.offsets.BDay(1) >= live_today:
             log.info(f'Checking {symbol} symbol ({i+1}/{len(asset_metadata)})')
-            contracts = None
-            while contracts is None:
-                contracts = broker.reqMatchingSymbols(symbol)
-            if symbol not in [c.contract.symbol for c in contracts] and '^' not in symbol:
+
+            contract = Contract()
+            contract.symbol = symbol
+            contract.secType = 'STK'
+            contract.exchange = 'SMART'
+            contract.currency = 'USD'
+
+            ticker = broker.subscribe_to_market_data(contract)
+
+            if pd.isna(ticker.last) and pd.isna(ticker.close) and '^' not in symbol:
                 log.warning(f'!!!No IB data for {symbol}!!!')
                 exclusions.append(symbol)
+
+            # contracts = None
+            # while contracts is None:
+            #     contracts = broker.reqMatchingSymbols(symbol)
+            # if symbol not in [c.contract.symbol for c in contracts] and '^' not in symbol:
+            #     log.warning(f'!!!No IB data for {symbol}!!!')
+            #     exclusions.append(symbol)
         else:
             log.info(f'Skipping check for {symbol} as it is not traded any more')
 
