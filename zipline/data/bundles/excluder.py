@@ -88,6 +88,15 @@ def exclude_from_web(bundle_module='sharadar_ext',
         if asset_end_date + pd.offsets.BDay(1) >= live_today:
             log.info(f'Checking {symbol} symbol ({i+1}/{len(asset_metadata)})')
 
+            contracts = None
+            while contracts is None:
+                contracts = broker.reqMatchingSymbols(symbol)
+
+            if symbol not in [c.contract.symbol for c in contracts] and '^' not in symbol:
+                log.warning(f'!!!No IB ticker data for {symbol}!!!')
+                exclusions.append(symbol)
+                continue
+
             contract = Contract()
             contract.symbol = symbol
             contract.secType = 'STK'
@@ -97,15 +106,9 @@ def exclude_from_web(bundle_module='sharadar_ext',
             ticker = broker.subscribe_to_market_data(contract)
 
             if pd.isna(ticker.last) and pd.isna(ticker.close) and '^' not in symbol:
-                log.warning(f'!!!No IB data for {symbol}!!!')
+                log.warning(f'!!!No IB market data for {symbol}!!!')
                 exclusions.append(symbol)
 
-            # contracts = None
-            # while contracts is None:
-            #     contracts = broker.reqMatchingSymbols(symbol)
-            # if symbol not in [c.contract.symbol for c in contracts] and '^' not in symbol:
-            #     log.warning(f'!!!No IB data for {symbol}!!!')
-            #     exclusions.append(symbol)
         else:
             log.info(f'Skipping check for {symbol} as it is not traded any more')
 
