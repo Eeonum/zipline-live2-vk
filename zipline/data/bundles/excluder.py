@@ -12,7 +12,7 @@ bundle you use) on your local machine. So the proper sequence of actions should 
 """
 
 from zipline.data import bundles
-from zipline.gens.brokers.ib_broker2 import IBBroker, Contract
+from zipline.gens.brokers.ib_broker2 import IBBroker
 import pandas as pd
 from datetime import datetime
 import pytz
@@ -22,6 +22,9 @@ import os
 
 def exclude_from_local(bundle='sharadar-ext',
                        ):
+    from logbook import Logger
+    log = Logger(__name__)
+
     tws_uri = 'localhost:7496:1'
     broker = IBBroker(tws_uri)
 
@@ -36,16 +39,26 @@ def exclude_from_local(bundle='sharadar-ext',
 
     for i, asset in enumerate(all_assets):
         live_today = pd.Timestamp(datetime.utcnow().date()).replace(tzinfo=pytz.UTC)
+        symbol = asset.symbol
         if asset.to_dict()['end_date'] + pd.offsets.BDay(1) >= live_today:
             print(f'Checking {asset.symbol} symbol ({i+1}/{len(all_assets)})')
             contracts = None
             while contracts is None:
-                contracts = broker.reqMatchingSymbols(asset.symbol)
-            if asset.symbol not in [c.contract.symbol for c in contracts] and '^' not in asset.symbol:
-                print(f'!!!No IB data for {asset.symbol}!!!')
-                exclusions.append(asset.symbol)
+                contracts = broker.reqMatchingSymbols(symbol)
+
+            if symbol not in [c.contract.symbol for c in contracts] and '^' not in symbol:
+                log.warning(f'!!!No IB ticker data for {symbol}!!!')
+                exclusions.append(symbol)
+                continue
+
+            ticker = broker.subscribe_to_market_data(symbol)
+            broker.cancelMktData(ticker.contract)
+
+            if pd.isna(ticker.last) and pd.isna(ticker.close) and '^' not in symbol:
+                log.warning(f'!!!No IB market data for {symbol}!!!')
+                exclusions.append(symbol)
         else:
-            print(f'Skipping check for {asset.symbol} as it is not traded any more')
+            log.info(f'Skipping check for {asset.symbol} as it is not traded any more')
 
     with open(EXCLUSIONS_FILE, 'wb') as f:
         pickle.dump(exclusions, f)
@@ -97,13 +110,8 @@ def exclude_from_web(bundle_module='sharadar_ext',
                 exclusions.append(symbol)
                 continue
 
-            contract = Contract()
-            contract.symbol = symbol
-            contract.secType = 'STK'
-            contract.exchange = 'SMART'
-            contract.currency = 'USD'
-
-            ticker = broker.subscribe_to_market_data(contract)
+            ticker = broker.subscribe_to_market_data(symbol)
+            broker.cancelMktData(ticker.contract)
 
             if pd.isna(ticker.last) and pd.isna(ticker.close) and '^' not in symbol:
                 log.warning(f'!!!No IB market data for {symbol}!!!')
