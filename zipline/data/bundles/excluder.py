@@ -118,7 +118,7 @@ def exclude_from_web(bundle_module='sharadar_ext',
                 exclusions.append(symbol)
 
         else:
-            log.info(f'Skipping check for {symbol} as it is not traded any more')
+            log.info(f'Skipping check for {symbol} as it is not traded any more: asset_end_date is {asset_end_date}')
 
     with open(EXCLUSIONS_FILE, 'wb') as f:
         pickle.dump(exclusions, f)
