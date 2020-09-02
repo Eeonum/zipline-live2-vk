@@ -281,6 +281,7 @@ def download (bundle = KERNEL_BUNDLE,
     :param fields: list of fields, all fields by default
     :param dimensions: list of dimensions, all dimensions by default (skipping MRs)
     """
+    log.info(f"Downloading fundamentals data since {start_date}")
     set_api_key()
     data = download_fundamendals_data(bundle = bundle,
                                       start_date = start_date,
@@ -320,7 +321,7 @@ def download_all (start_date = '2013-01-01'):
     this is the top-level executor of the fundamentals download - just downloads everything since 2007
     you may want to schedule download_all to be executed daily within out-of-market hours
     """
-    StderrHandler().push_application()
+    StderrHandler(bubble=True).push_application()
     data = download(start_date=start_date)
     return data
 
