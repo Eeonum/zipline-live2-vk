@@ -321,7 +321,7 @@ def download_all (start_date = '2013-01-01'):
     this is the top-level executor of the fundamentals download - just downloads everything since 2007
     you may want to schedule download_all to be executed daily within out-of-market hours
     """
-    StderrHandler(bubble=True).push_application()
+
     data = download(start_date=start_date)
     return data
 
