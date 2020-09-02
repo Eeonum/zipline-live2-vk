@@ -492,11 +492,17 @@ def exclude_and_ingest(bundle, assets_version, show_progress, file_logging):
 
 @main.command()
 @click.option(
+    '-s',
+    '--start-date',
+    default='2013-01-01',
+    help='Starting date fundamentals download.',
+)
+@click.option(
     '--file-logging/--no-file-logging',
     default=False,
     help='Duplicate log to file.'
 )
-def ingest_fundamentals(file_logging):
+def ingest_fundamentals(start_date, file_logging):
     """Ingest the data for the given bundle.
     """
     from logbook import FileHandler
@@ -505,8 +511,7 @@ def ingest_fundamentals(file_logging):
     if file_logging:
         log_file = zipline_root() + f'/ingest_fundamentals_{datetime.datetime.now().strftime("%d%m%Y%H%M")}.log'
         FileHandler(log_file, bubble=True).push_application()
-
-    bundles_module.quandl_fundamentals.download_all()
+    bundles_module.quandl_fundamentals.download_all(start_date)
 
 @main.command()
 @click.option(
