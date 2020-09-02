@@ -265,7 +265,7 @@ def download_fundamendals_data (bundle,
     return data
 
 def download (bundle = KERNEL_BUNDLE,
-              start_date = '2007-01-01',
+              start_date = '2013-01-01',
               tickers = None,
               fields = None,
               dimensions = None,
@@ -315,13 +315,13 @@ def test ():
                   )
     return data
 
-def download_all ():
+def download_all (start_date = '2013-01-01'):
     """
     this is the top-level executor of the fundamentals download - just downloads everything since 2007
     you may want to schedule download_all to be executed daily within out-of-market hours
     """
     StderrHandler().push_application()
-    data = download()
+    data = download(start_date=start_date)
     return data
 
 if __name__ == '__main__':
